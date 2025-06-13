@@ -1,0 +1,72 @@
+name: Terraform Deployment Workflow
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow when code is pushed to the main branch
+  pull_request:
+    branches:
+      - main # Trigger the workflow during pull requests targeting the main branch
+
+jobs:
+  terraform-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0 
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: ./terraform-project 
+
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0 
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::936389955371:user/Learner
+          aws-region: us-east-2
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform-project
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        working-directory: ./terraform-project
+
+  terraform-apply:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::936389955371:user/Learner
+          aws-region: us-east-2
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        working-directory: ./terraform-project
