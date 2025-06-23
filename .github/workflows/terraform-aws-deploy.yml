@@ -22,7 +22,7 @@ jobs:
 
       - name: Terraform Format Check
         run: terraform fmt -check
-        working-directory: ./terraform-project 
+        working-directory: ./ 
 
   terraform-plan:
     runs-on: ubuntu-latest
@@ -43,11 +43,11 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform-project
+        working-directory: ./
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
-        working-directory: ./terraform-project
+        working-directory: ./
 
   terraform-apply:
     needs: terraform-plan
@@ -69,4 +69,4 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-        working-directory: ./terraform-project
+        working-directory: ./
