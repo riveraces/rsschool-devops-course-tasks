@@ -1,0 +1,83 @@
+name: Terraform Deployment Workflow
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow when code is pushed to the main branch
+  pull_request:
+    branches:
+      - main # Trigger the workflow during pull requests targeting the main branch
+
+jobs:
+  terraform-check:
+    name: Terraform Formatting Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0 # Your Terraform version
+
+      - name: Terraform Format Check
+        working-directory: ./ # Run terraform fmt in the repository root
+        run: terraform fmt -check
+
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Enable OIDC token permission for AWS authentication
+      contents: read  # Allow workflow to read the repository content
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::936389955371:role/Github # Replace with your IAM Role ARN
+          role-session-name: github-actions
+          aws-region: us-east-2
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0 # Your Terraform version
+
+      - name: Terraform Init
+        working-directory: ./ # Run terraform init in the repository root
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./ # Run terraform plan in the repository root
+        run: terraform plan
+
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: terraform-plan # This job depends on the terraform-plan job succeeding
+    permissions:
+      id-token: write # Enable OIDC token permission for AWS authentication
+      contents: read  # Allow workflow to read the repository content
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:as:iam::936389955371:role/Github 
+          role-session-name: github-actions
+          aws-region: us-east-2
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.0 # Your Terraform version
+
+      - name: Terraform Apply
+        working-directory: ./ # Run terraform apply in the repository root
+        run: terraform apply -auto-approve
